@@ -22,7 +22,7 @@ function varargout = bigwork(varargin)
 
 % Edit the above text to modify the response to help bigwork
 
-% Last Modified by GUIDE v2.5 10-Dec-2024 21:48:43
+% Last Modified by GUIDE v2.5 11-Dec-2024 21:39:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -118,5 +118,52 @@ function pushbutton4_Callback(hObject, eventdata, handles)
         zhifangtu(img); % 打开 zhifangtu 界面，并传递图片
     else
         msgbox('请先选择一张图片！', '错误', 'error');
+    end
+end
+
+
+% --- Executes on button press in pushbutton5.
+function pushbutton5_Callback(hObject, eventdata, handles)
+% 获取当前图像
+    if isfield(handles, 'img')
+        img = handles.img; % 从 handles 获取原始图像
+
+        % 转换为灰度图（如需要）
+        if size(img, 3) == 3
+            grayImg = rgb2gray(img);
+        else
+            grayImg = img;
+        end
+
+        % 线性变换
+        linearImg = linearTransform(grayImg);
+
+        % 对数变换
+        logImg = logTransform(grayImg);
+
+        % 指数变换
+        expImg = expTransform(grayImg);
+
+        % 在新窗口中展示结果
+        hFig = figure;
+        set(hFig, 'Name', '对比度增强结果', 'NumberTitle', 'off'); % 修改窗口标题
+
+        subplot(2, 2, 1);
+        imshow(grayImg);
+        title('原始图像');
+
+        subplot(2, 2, 2);
+        imshow(linearImg);
+        title('线性变换');
+
+        subplot(2, 2, 3);
+        imshow(logImg);
+        title('对数变换');
+
+        subplot(2, 2, 4);
+        imshow(expImg);
+        title('指数变换');
+    else
+        errordlg('请先加载图像！', '错误');
     end
 end
