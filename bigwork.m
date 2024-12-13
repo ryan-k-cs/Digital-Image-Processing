@@ -22,7 +22,7 @@ function varargout = bigwork(varargin)
 
 % Edit the above text to modify the response to help bigwork
 
-% Last Modified by GUIDE v2.5 11-Dec-2024 21:39:06
+% Last Modified by GUIDE v2.5 14-Dec-2024 00:21:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -101,9 +101,228 @@ end
 
 % --- Executes on button press in pushbutton2.
 function pushbutton2_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+    % 检查是否加载了图像
+    if ~isfield(handles, 'img') || isempty(handles.img)
+        errordlg('请先选择一张图片！', '错误');
+        return;
+    end
+
+    % 获取复选框状态
+    isResizeChecked = get(handles.checkbox2, 'Value');  % 判断是否进行缩放
+    isRotateChecked = get(handles.checkbox3, 'Value');  % 判断是否进行旋转
+    isShearChecked = get(handles.checkbox4, 'Value');   % 判断是否进行错切
+    isAddNoiseChecked = get(handles.checkbox7, 'Value');  % 判断是否选择加噪
+    isFilterChecked = get(handles.checkbox8, 'Value'); % 判断是否进行滤波（复选框）
+    isMirrorChecked = get(handles.checkbox9, 'Value'); % 判断是否进行镜像
+    isContrastChecked = get(handles.checkbox10, 'Value');  % 判断是否勾选对比度增强
+     % 获取镜像类型（水平或垂直）
+    if isMirrorChecked
+        mirrorType = get(handles.popupmenu3, 'Value'); % 获取下拉框的值，1为水平镜像，2为垂直镜像
+    else
+        mirrorType = 0; % 如果没有勾选镜像，设置为0
+    end
+
+    % 获取缩放倍数（如果需要）
+    kx = str2double(get(handles.edit1, 'String')); % 宽度缩放倍数
+    ky = str2double(get(handles.edit3, 'String')); % 高度缩放倍数
+    
+    % 获取旋转角度（如果需要）
+    angle = str2double(get(handles.edit2, 'String')); % 旋转角度
+
+    % 获取错切因子（如果需要）
+    shearFactorx = str2double(get(handles.edit4, 'String')); % 错切因子
+    shearFactory = str2double(get(handles.edit5, 'String')); % 错切因子
+
+    
+    % 获取噪声类型（高斯噪声或椒盐噪声）
+    isGaussianNoise = get(handles.radiobutton2, 'Value');  % 高斯噪声
+    isSaltAndPepperNoise = get(handles.radiobutton3, 'Value');  % 椒盐噪声
+    % 获取滤波器大小（用于均值滤波和中值滤波）
+    filterSize = str2double(get(handles.edit6, 'String')); 
+
+     % 获取选择的对比度增强类型
+    isLinear = get(handles.radiobutton11, 'Value');  % 判断是否选择线性变换
+    isLogarithmic = get(handles.radiobutton12, 'Value');  % 判断是否选择对数变换
+    isExponential = get(handles.radiobutton13, 'Value');  % 判断是否选择指数变换
+
+
+    % 图像初始化
+    img = handles.img;
+
+
+
+    % 根据复选框状态进行不同操作
+
+    % 如果勾选了对比度增强
+    if isContrastChecked
+        % 根据用户选择的增强方式调用相应的函数
+        if size(img, 3) == 3
+            img = rgb2gray(img); % 转换为灰度图像
+        end
+
+        if isLinear
+            % 调用线性对比度增强函数
+            img = linearTransform(img);
+
+        elseif isLogarithmic
+            % 调用对数变换函数
+            img = logTransform(img);
+
+        elseif isExponential
+            % 调用指数变换函数
+            img = expTransform(img);
+
+        else
+            % 如果没有选择有效的增强方式
+            errordlg('请先选择对比度增强类型！', '错误');
+            return;
+        end
+    end
+
+
+
+
+
+
+    if isAddNoiseChecked
+        % 如果选择了加噪声
+        if isGaussianNoise
+            % 添加高斯噪声
+            img = imnoise(img, 'gaussian');
+        elseif isSaltAndPepperNoise
+            % 添加椒盐噪声
+            img = imnoise(img, 'salt & pepper');
+        else
+            % 如果没有选择噪声类型，弹出警告
+            errordlg('请先选择噪声类型！', '错误');
+            return;
+        end
+    end
+
+    % 如果选择了滤波
+    if isFilterChecked
+        % 判断选择的滤波类型
+        if get(handles.radiobutton4, 'Value')  % 如果选择均值滤波
+            if isnan(filterSize) || filterSize <= 0
+                errordlg('请输入有效的滤波器大小！', '错误');
+                return;
+            end
+            % 执行均值滤波
+            img = meanFilter(img, filterSize);
+        elseif get(handles.radiobutton7, 'Value')  % 如果选择中值滤波
+            if isnan(filterSize) || filterSize <= 0
+                errordlg('请输入有效的滤波器大小！', '错误');
+                return;
+            end
+            % 执行中值滤波
+            img = medianFilter(img, filterSize);
+
+        elseif get(handles.radiobutton5, 'Value')  % 如果选择高斯滤波
+            if isnan(filterSize) || filterSize <= 0
+                errordlg('请输入有效的滤波器大小！', '错误');
+                return;
+            end
+            % 获取标准差（假设你有一个输入框获取sigma值）
+            sigma = str2double(get(handles.edit7, 'String')); % 获取标准差
+            % 执行高斯滤波
+            img = gaussianFilter(img, filterSize, sigma);
+
+        elseif get(handles.radiobutton6, 'Value')  % 如果选择双边滤波
+            if isnan(filterSize) || filterSize <= 0
+                errordlg('请输入有效的滤波器大小！', '错误');
+                return;
+            end
+            % 获取双边滤波的参数
+            sigma_d = str2double(get(handles.edit8, 'String'));  % 获取空间域的标准差
+            sigma_r = str2double(get(handles.edit9, 'String'));  % 获取灰度域的标准差
+            
+            % 执行双边滤波
+            img = bilateralFilter(img, filterSize, sigma_d, sigma_r);
+
+        elseif get(handles.radiobutton8, 'Value')  % 如果选择理想低通滤波
+            % 获取截止频率
+            cutoffFreq = str2double(get(handles.edit10, 'String'));
+            % 执行理想低通滤波
+            img = idealLowPassFilter(img, cutoffFreq);
+        elseif get(handles.radiobutton9, 'Value')  % 如果选择指数低通滤波
+            % 获取截止频率
+            D0 = str2double(get(handles.edit10, 'String'));
+            % 执行指数低通滤波
+            img = exponentialLowPassFilter(img, D0);
+            elseif get(handles.radiobutton10, 'Value')  % 如果选择模糊均值滤波
+                % 调用 fuzzy_average_filter
+                img = fuzzy_average_filter(img, filterSize);
+
+
+
+        else
+            % 如果没有选择滤波类型，弹出警告
+            errordlg('请先选择滤波类型！', '错误');
+            return;
+        end
+    end
+
+
+    % 根据复选框状态进行不同操作
+    if isMirrorChecked
+        % 如果选择了镜像
+        if mirrorType == 1
+            % 水平镜像
+            img = horizontal_flip(img);
+        elseif mirrorType == 2
+            % 垂直镜像
+            img = vertical_flip(img);
+        end
+    end
+
+
+
+
+
+    if isRotateChecked
+        % 如果选择了旋转
+        if isnan(angle)
+            errordlg('请输入有效的旋转角度！', '错误');
+            return;
+        end
+        img = rotateImage(double(img), angle);
+    end
+
+
+    if isShearChecked
+        % 如果选择了错切
+        if isnan(shearFactorx)||isnan(shearFactory)
+            errordlg('请输入有效的错切因子！', '错误');
+            return;
+        end
+        img = shearImageRGB(double(img), shearFactorx,shearFactory);
+    end
+
+
+    if isResizeChecked
+        % 如果选择了缩放
+        if isnan(kx) || isnan(ky) || kx <= 0 || ky <= 0
+            errordlg('请输入有效的缩放倍数（正数）！', '错误');
+            return;
+        end
+        % img = bilinearResize(double(img), kx, ky);
+        img = resizeColorImage(img, kx, ky);
+    end
+
+
+
+
+
+
+    % 显示结果
+    axes(handles.axes2); % 指定显示在 axes2
+    imshow(img, []);
+    title('处理结果');
+
+
+
+
+
 end
 
 
@@ -166,4 +385,371 @@ function pushbutton5_Callback(hObject, eventdata, handles)
     else
         errordlg('请先加载图像！', '错误');
     end
+end
+
+
+% --- Executes on button press in checkbox2.
+function checkbox2_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+end
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox2
+
+
+% --- Executes on button press in checkbox3.
+function checkbox3_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox3
+end
+
+
+% --- Executes on button press in checkbox4.
+function checkbox4_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox4
+end
+
+
+
+function edit1_Callback(hObject, eventdata, handles)
+% hObject    handle to edit1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit1 as text
+%        str2double(get(hObject,'String')) returns contents of edit1 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+function edit2_Callback(hObject, eventdata, handles)
+% hObject    handle to edit2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit2 as text
+%        str2double(get(hObject,'String')) returns contents of edit2 as a double
+end
+% --- Executes during object creation, after setting all properties.
+function edit2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+
+function edit3_Callback(hObject, eventdata, handles)
+% hObject    handle to edit3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit3 as text
+%        str2double(get(hObject,'String')) returns contents of edit3 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit3_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+
+function edit4_Callback(hObject, eventdata, handles)
+% hObject    handle to edit4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit4 as text
+%        str2double(get(hObject,'String')) returns contents of edit4 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit4_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+function edit5_Callback(hObject, eventdata, handles)
+% hObject    handle to edit5 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit5 as text
+%        str2double(get(hObject,'String')) returns contents of edit5 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit5_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit5 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+% --- Executes on button press in pushbutton7.
+function pushbutton7_Callback(hObject, eventdata, handles)
+end
+
+
+
+function edit6_Callback(hObject, eventdata, handles)
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function edit6_CreateFcn(hObject, eventdata, handles)
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+% --- Executes on button press in pushbutton8.
+function pushbutton8_Callback(hObject, eventdata, handles)
+end
+
+
+% --- Executes on button press in checkbox5.
+function checkbox5_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox5 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+end
+% Hint: get(hObject,'Value') returns toggle state of checkbox5
+
+
+% --- Executes on button press in checkbox7.加噪
+function checkbox7_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox7 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox7
+end
+
+% --- Executes on button press in checkbox8.滤波
+function checkbox8_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox8
+end
+
+
+% --- Executes on button press in radiobutton7.
+function radiobutton7_Callback(hObject, eventdata, handles)
+end
+
+function radiobutton3_Callback(hObject, eventdata, handles)
+end
+
+function radiobutton2_Callback(hObject, eventdata, handles)
+end
+
+
+
+function edit7_Callback(hObject, eventdata, handles)
+end
+
+% Hints: get(hObject,'String') returns contents of edit7 as text
+%        str2double(get(hObject,'String')) returns contents of edit7 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit7_CreateFcn(hObject, eventdata, handles)
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+
+function edit8_Callback(hObject, eventdata, handles)
+% hObject    handle to edit8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit8 as text
+%        str2double(get(hObject,'String')) returns contents of edit8 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit8_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+function edit9_Callback(hObject, eventdata, handles)
+% hObject    handle to edit9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit9 as text
+%        str2double(get(hObject,'String')) returns contents of edit9 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit9_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+
+function edit10_Callback(hObject, eventdata, handles)
+% hObject    handle to edit10 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit10 as text
+%        str2double(get(hObject,'String')) returns contents of edit10 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit10_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit10 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+
+function edit11_Callback(hObject, eventdata, handles)
+% hObject    handle to edit11 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit11 as text
+%        str2double(get(hObject,'String')) returns contents of edit11 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit11_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit11 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+% --- Executes on button press in checkbox9.
+function checkbox9_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox9 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox9
+end
+
+% --- Executes on selection change in popupmenu3.
+function popupmenu3_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu3 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu3
+end
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu3_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+% --- Executes on button press in checkbox10.
+function checkbox10_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox10 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox10
 end
