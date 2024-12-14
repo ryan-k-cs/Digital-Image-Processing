@@ -22,7 +22,7 @@ function varargout = bigwork(varargin)
 
 % Edit the above text to modify the response to help bigwork
 
-% Last Modified by GUIDE v2.5 14-Dec-2024 00:21:29
+% Last Modified by GUIDE v2.5 14-Dec-2024 11:21:34
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -115,6 +115,8 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     isFilterChecked = get(handles.checkbox8, 'Value'); % 判断是否进行滤波（复选框）
     isMirrorChecked = get(handles.checkbox9, 'Value'); % 判断是否进行镜像
     isContrastChecked = get(handles.checkbox10, 'Value');  % 判断是否勾选对比度增强
+    isEdgeExtractionChecked = get(handles.checkbox11, 'Value');  % 判断是否进行边缘提取
+
      % 获取镜像类型（水平或垂直）
     if isMirrorChecked
         mirrorType = get(handles.popupmenu3, 'Value'); % 获取下拉框的值，1为水平镜像，2为垂直镜像
@@ -145,13 +147,41 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     isLogarithmic = get(handles.radiobutton12, 'Value');  % 判断是否选择对数变换
     isExponential = get(handles.radiobutton13, 'Value');  % 判断是否选择指数变换
 
+    % 获取算子类型
+    isRobertChecked = get(handles.radiobutton14, 'Value');  % 判断是否选择Robert算子
+    isPrewittChecked = get(handles.radiobutton15, 'Value'); % 判断是否选择Prewitt算子
+    isSobelChecked = get(handles.radiobutton16, 'Value');   % 判断是否选择Sobel算子
+    isLaplaceChecked = get(handles.radiobutton17, 'Value'); % 判断是否选择拉普拉斯算子
 
     % 图像初始化
     img = handles.img;
 
-
-
     % 根据复选框状态进行不同操作
+
+
+
+     % 如果选择了边缘提取并且选择了Robert算子
+    if isEdgeExtractionChecked
+        if isRobertChecked
+            % 执行Robert算子的边缘提取
+            img = robertEdgeDetection(img);
+        elseif isPrewittChecked
+            % 执行Prewitt算子的边缘提取
+            img = prewittEdgeDetection(img);
+        elseif isSobelChecked
+            % 执行Sobel算子的边缘提取
+            img = sobelEdgeDetection(img);
+        elseif isLaplaceChecked
+            % 执行拉普拉斯算子的边缘提取
+            img = laplaceEdgeDetection(img);
+        
+        else
+            errordlg('请先选择边缘提取方法！', '错误');
+            return;
+        end
+    end
+
+
 
     % 如果勾选了对比度增强
     if isContrastChecked
@@ -752,4 +782,14 @@ function checkbox10_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox10
+end
+
+
+% --- Executes on button press in checkbox11.
+function checkbox11_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox11 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox11
 end
