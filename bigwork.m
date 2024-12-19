@@ -22,7 +22,7 @@ function varargout = bigwork(varargin)
 
 % Edit the above text to modify the response to help bigwork
 
-% Last Modified by GUIDE v2.5 14-Dec-2024 11:21:34
+% Last Modified by GUIDE v2.5 14-Dec-2024 21:31:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -80,14 +80,28 @@ function pushbutton1_Callback(hObject, eventdata, handles)
      % 如果用户没有取消选择，filename 和 path 不为空
     if filename ~= 0
         % 构建完整的文件路径
-        fullpath = fullfile(path, filename);
-        
+        fullpath = fullfile(path, filename);        
         % 读取图片
         img = imread(fullpath);
+
+        % 去除路径末尾的斜杠（如果有的话）
+        if path(end) == filesep
+            path = path(1:end-1);  % 移除末尾的斜杠
+        end
+        
+        % 使用 strsplit 通过文件分隔符分割路径，并获取最后一部分作为文件夹名称
+        path_parts = strsplit(path, filesep);
+        parent_dir_name = path_parts{end};  % 获取最后一部分，即文件夹名
+
         
         % 将图片存储在 handles 结构中，以便其他回调函数可以访问
         handles.img = img; % 将图片保存在 handles 结构中的 img 字段
+        handles.parent_dir_name = parent_dir_name; % 将父目录保存在 handles 结构中的 parent_dir 字段
         guidata(hObject, handles); % 更新 handles
+
+
+         % 在 text25 控件中显示分类
+        set(handles.text25, 'String', parent_dir_name); 
 
         % 在 GUI 的 axes 控件中显示图片
         axes(handles.axes1);  % 将当前的 axes 设置为 axes1
@@ -146,7 +160,7 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     isLinear = get(handles.radiobutton11, 'Value');  % 判断是否选择线性变换
     isLogarithmic = get(handles.radiobutton12, 'Value');  % 判断是否选择对数变换
     isExponential = get(handles.radiobutton13, 'Value');  % 判断是否选择指数变换
-
+    isPiecewiseLinear = get(handles.radiobutton18,'Value'); % 判断是否选择分段线性变换
     % 获取算子类型
     isRobertChecked = get(handles.radiobutton14, 'Value');  % 判断是否选择Robert算子
     isPrewittChecked = get(handles.radiobutton15, 'Value'); % 判断是否选择Prewitt算子
@@ -201,6 +215,10 @@ function pushbutton2_Callback(hObject, eventdata, handles)
         elseif isExponential
             % 调用指数变换函数
             img = expTransform(img);
+        elseif isPiecewiseLinear
+            % 调用分段线性灰度变换函数
+            img = piecewiseLinearTransform(img);
+
 
         else
             % 如果没有选择有效的增强方式
@@ -340,10 +358,11 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     end
 
 
+    handles.processed_img = img;
+    guidata(hObject, handles);  % 更新handles
 
 
-
-
+    
     % 显示结果
     axes(handles.axes2); % 指定显示在 axes2
     imshow(img, []);
@@ -792,4 +811,54 @@ function checkbox11_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkbox11
+end
+
+
+% --- Executes on button press in pushbutton9.
+function pushbutton9_Callback(hObject, eventdata, handles)
+    % 检查是否已有处理后的图像
+    if isfield(handles, 'processed_img')
+        processed_img = handles.processed_img;
+        % 如果是灰度图像，转换为三通道
+        if size(processed_img, 3) == 1
+            processed_img = repmat(processed_img, [1, 1, 3]);  % 复制灰度图像到三个通道
+        end
+        % 设置保存的路径
+        image_save_path = 'D:/_laboratory/matlab_table/Digital-Image-Processing/processed_img.jpg';  % 自定义保存路径和文件名
+
+        % 保存图片
+        imwrite(processed_img, image_save_path);
+        
+        % model_path = 'checkpoints/checkpoint_epoch_19.pt';
+        % model_path = 'D:\_laboratory\pythonProject\DIP\checkpoints\checkpoint_epoch_19.pt';
+        model_path = 'D:\_laboratory\pythonProject\DIP\checkpoints\checkpoint_epoch_19.pt';
+        model=py.importlib.import_module('model_pred');
+        res= model.predict_with_checkpoint(model_path,image_save_path);
+        res = string(res);  % 将 Python 字符串转换为 MATLAB 字符串
+        set(handles.text23,"String",res);
+        
+    else
+        msgbox('请先选择并处理图像！', '错误', 'error');
+    end
+
+end
+
+
+
+function edit12_Callback(hObject, eventdata, handles)
+
+
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit12_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit12 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 end
