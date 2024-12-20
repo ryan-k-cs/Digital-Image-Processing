@@ -22,7 +22,7 @@ function varargout = bigwork(varargin)
 
 % Edit the above text to modify the response to help bigwork
 
-% Last Modified by GUIDE v2.5 14-Dec-2024 21:31:25
+% Last Modified by GUIDE v2.5 20-Dec-2024 20:43:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -96,6 +96,7 @@ function pushbutton1_Callback(hObject, eventdata, handles)
         
         % 将图片存储在 handles 结构中，以便其他回调函数可以访问
         handles.img = img; % 将图片保存在 handles 结构中的 img 字段
+        handles.source_img = img;
         handles.parent_dir_name = parent_dir_name; % 将父目录保存在 handles 结构中的 parent_dir 字段
         guidata(hObject, handles); % 更新 handles
 
@@ -130,6 +131,7 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     isMirrorChecked = get(handles.checkbox9, 'Value'); % 判断是否进行镜像
     isContrastChecked = get(handles.checkbox10, 'Value');  % 判断是否勾选对比度增强
     isEdgeExtractionChecked = get(handles.checkbox11, 'Value');  % 判断是否进行边缘提取
+    isTargetExtractionChecked = get(handles.checkbox12, 'Value');  % 判断是否进行目标提取
 
      % 获取镜像类型（水平或垂直）
     if isMirrorChecked
@@ -310,8 +312,6 @@ function pushbutton2_Callback(hObject, eventdata, handles)
         end
     end
 
-
-    % 根据复选框状态进行不同操作
     if isMirrorChecked
         % 如果选择了镜像
         if mirrorType == 1
@@ -361,6 +361,13 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     handles.processed_img = img;
     guidata(hObject, handles);  % 更新handles
 
+
+    % 如果选择了目标提取
+    if isTargetExtractionChecked
+        [mask,img] = targetExtraction(img);
+        handles.target_img = img;  % 将结果存储到handles结构体中
+        guidata(hObject, handles);  % 更新handles数据
+    end
 
     
     % 显示结果
@@ -824,8 +831,7 @@ function pushbutton9_Callback(hObject, eventdata, handles)
             processed_img = repmat(processed_img, [1, 1, 3]);  % 复制灰度图像到三个通道
         end
         % 设置保存的路径
-        image_save_path = 'D:/_laboratory/matlab_table/Digital-Image-Processing/processed_img.jpg';  % 自定义保存路径和文件名
-
+        image_save_path = 'D:/_laboratory/matlab_table/Digital-Image-Processing/processed_img.jpg';
         % 保存图片
         imwrite(processed_img, image_save_path);
         
@@ -861,4 +867,83 @@ function edit12_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+end
+
+
+% --- Executes on button press in checkbox12.
+function checkbox12_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox12 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox12
+end
+
+
+% --- Executes on button press in pushbutton10.
+function pushbutton10_Callback(hObject, eventdata, handles)
+% 获取当前axes中的图像
+        ax = handles.axes2;
+        img = getimage(ax);  % 从axes中获取图像
+        
+        % 如果axes没有图像，提示用户
+        if isempty(img)
+            msgbox('No image to save!', 'Error', 'error');
+            return;
+        end
+        
+        % 打开保存文件对话框
+        [file, path] = uiputfile({'*.png';'*.jpg';'*.tiff';'*.bmp'}, 'Save Image As');
+        
+        % 如果用户没有取消，保存图像
+        if ischar(file)
+            full_path = fullfile(path, file);
+            imwrite(img, full_path);  % 保存图像
+            disp(['Image saved as: ', full_path]);
+        else
+            disp('Save operation was cancelled.');
+        end
+end
+
+
+% --- Executes on button press in pushbutton12.
+function pushbutton12_Callback(hObject, eventdata, handles)
+ % 对源图像 (source_img) 和目标图像 (target_img) 进行LBP处理
+
+    % 检查是否存在 source_img 和 target_img
+    if isfield(handles, 'source_img') && isfield(handles, 'target_img')
+        
+        source_img = handles.source_img;
+        target_img = handles.target_img;
+
+        lbp_source = computeLBP(source_img);
+        
+        lbp_target = computeLBP(target_img);
+        
+         % 创建一个新的figure，并设置窗口名称
+        figure('Name', 'LBP特征提取', 'NumberTitle', 'off'); % 设置窗口名称为 'LBP特征提取'
+        
+        % 显示源图像的LBP特征图
+        subplot(1, 2, 1); 
+        imshow(lbp_source);
+        title('源图像 LBP 特征提取');
+        
+        % 显示目标图像的LBP特征图
+        subplot(1, 2, 2); 
+        imshow(lbp_target);
+        title('目标图像 LBP 特征提取');
+
+       
+    else
+        % 如果没有找到源图像或目标图像，则弹出提示
+        msgbox('源图像或目标图像未找到！', '错误', 'error');
+    end
+
+end
+
+% --- Executes on button press in pushbutton13.
+function pushbutton13_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton13 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
 end

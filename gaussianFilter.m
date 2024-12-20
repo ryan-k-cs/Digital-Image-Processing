@@ -6,14 +6,17 @@ function output_img = gaussianFilter(input_img, filter_size, sigma)
     [rows, cols, channels] = size(input_img);
 
     % 生成高斯滤波器核
-    h = fspecial('gaussian', filter_size, sigma);
+    % 1. 创建一个 filter_size x filter_size 的高斯核
+    [X, Y] = meshgrid(-(filter_size-1)/2:(filter_size-1)/2, -(filter_size-1)/2:(filter_size-1)/2);
+    h = exp(-(X.^2 + Y.^2) / (2 * sigma^2));
+    h = h / sum(h(:));  % 归一化，确保滤波器的总和为1
 
-    % 对每个通道分别进行高斯滤波处理
+    % 如果是彩色图像，逐通道处理
     output_img = zeros(size(input_img));
-    
+
     for c = 1:channels
-        % 对每个通道应用高斯滤波
-        output_img(:,:,c) = imfilter(input_img(:,:,c), h, 'same', 'replicate');
+        % 对每个通道应用卷积
+        output_img(:,:,c) = conv2(input_img(:,:,c), h, 'same');
     end
 
     % 如果是彩色图像，结果需要转回 uint8 类型

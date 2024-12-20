@@ -1,5 +1,4 @@
 function output_img = piecewiseLinearTransformWithGrayscale(input_img)
-    % 分段线性灰度变换，动态生成控制点，并支持将彩色图像转换为灰度图
     % 输入：
     %   input_img: 输入图像（灰度或彩色）
     % 输出：
