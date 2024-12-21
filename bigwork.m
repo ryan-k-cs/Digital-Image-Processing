@@ -22,7 +22,7 @@ function varargout = bigwork(varargin)
 
 % Edit the above text to modify the response to help bigwork
 
-% Last Modified by GUIDE v2.5 20-Dec-2024 20:43:04
+% Last Modified by GUIDE v2.5 21-Dec-2024 20:28:54
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -107,6 +107,50 @@ function pushbutton1_Callback(hObject, eventdata, handles)
         % 在 GUI 的 axes 控件中显示图片
         axes(handles.axes1);  % 将当前的 axes 设置为 axes1
         imshow(img);          % 显示图片
+
+
+        % 转为灰度图
+        grayImage = rgb_to_gray(img);
+        axes(handles.axes2);
+        imshow(grayImage);
+
+
+        % 显示灰度直方图
+        axes(handles.axes3);
+        hist = computeHistogram(grayImage);
+        bar(0:255, hist); % 绘制直方图
+        xlim([0 255]);
+        % title('灰度直方图');
+        xlabel('灰度值');
+        ylabel('像素数');
+
+
+
+         % --- 直方图均衡化 ---
+        % 对灰度图进行均衡化
+        equalizedImage = histogramEqualization(grayImage);
+
+        % 显示均衡化后的灰度图
+        axes(handles.axes4);
+        imshow(equalizedImage);
+        % title('直方图均衡化后的图像');
+
+        % 显示均衡化后的直方图
+        axes(handles.axes5);
+        equalizedHist = computeHistogram(equalizedImage);
+        bar(0:255, equalizedHist);
+        xlim([0 255]);
+        % title('均衡化后的直方图');
+        xlabel('灰度值');
+        ylabel('像素数');
+
+        % 保存灰度图到 handles
+        handles.zhifangtugrayImage = grayImage;
+        guidata(hObject, handles); % 更新 handles 数据
+
+        
+
+
     else
         % 如果没有选择文件，显示消息
         disp('未找到图片');
@@ -132,6 +176,7 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     isContrastChecked = get(handles.checkbox10, 'Value');  % 判断是否勾选对比度增强
     isEdgeExtractionChecked = get(handles.checkbox11, 'Value');  % 判断是否进行边缘提取
     isTargetExtractionChecked = get(handles.checkbox12, 'Value');  % 判断是否进行目标提取
+    isGeometricTransformationChecked = get(handles.checkbox14, 'Value'); % 判断是否进行几何变换
 
      % 获取镜像类型（水平或垂直）
     if isMirrorChecked
@@ -168,6 +213,10 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     isPrewittChecked = get(handles.radiobutton15, 'Value'); % 判断是否选择Prewitt算子
     isSobelChecked = get(handles.radiobutton16, 'Value');   % 判断是否选择Sobel算子
     isLaplaceChecked = get(handles.radiobutton17, 'Value'); % 判断是否选择拉普拉斯算子
+
+    isKMean = get(handles.radiobutton21, 'Value');% 判断是否选择聚类分割
+    isWaterRegion = get(handles.radiobutton22,'value');
+    isBimodalThresholding = get(handles.radiobutton23,'value');
 
     % 图像初始化
     img = handles.img;
@@ -311,64 +360,73 @@ function pushbutton2_Callback(hObject, eventdata, handles)
             return;
         end
     end
+    if isGeometricTransformationChecked
+        if isMirrorChecked
+            % 如果选择了镜像
+            if mirrorType == 1
+                % 水平镜像
+                img = horizontal_flip(img);
+            elseif mirrorType == 2
+                % 垂直镜像
+                img = vertical_flip(img);
+            end
+        end
 
-    if isMirrorChecked
-        % 如果选择了镜像
-        if mirrorType == 1
-            % 水平镜像
-            img = horizontal_flip(img);
-        elseif mirrorType == 2
-            % 垂直镜像
-            img = vertical_flip(img);
+        if isRotateChecked
+            % 如果选择了旋转
+            if isnan(angle)
+                errordlg('请输入有效的旋转角度！', '错误');
+                return;
+            end
+            img = rotateImage(double(img), angle);
+        end
+
+
+        if isShearChecked
+            % 如果选择了错切
+            if isnan(shearFactorx)||isnan(shearFactory)
+                errordlg('请输入有效的错切因子！', '错误');
+                return;
+            end
+            img = shearImageRGB(double(img), shearFactorx,shearFactory);
+        end
+
+
+        if isResizeChecked
+            % 如果选择了缩放
+            if isnan(kx) || isnan(ky) || kx <= 0 || ky <= 0
+                errordlg('请输入有效的缩放倍数（正数）！', '错误');
+                return;
+            end
+            % img = bilinearResize(double(img), kx, ky);
+            img = resizeColorImage(img, kx, ky);
         end
     end
-
-
-
-
-
-    if isRotateChecked
-        % 如果选择了旋转
-        if isnan(angle)
-            errordlg('请输入有效的旋转角度！', '错误');
-            return;
-        end
-        img = rotateImage(double(img), angle);
-    end
-
-
-    if isShearChecked
-        % 如果选择了错切
-        if isnan(shearFactorx)||isnan(shearFactory)
-            errordlg('请输入有效的错切因子！', '错误');
-            return;
-        end
-        img = shearImageRGB(double(img), shearFactorx,shearFactory);
-    end
-
-
-    if isResizeChecked
-        % 如果选择了缩放
-        if isnan(kx) || isnan(ky) || kx <= 0 || ky <= 0
-            errordlg('请输入有效的缩放倍数（正数）！', '错误');
-            return;
-        end
-        % img = bilinearResize(double(img), kx, ky);
-        img = resizeColorImage(img, kx, ky);
-    end
-
 
     handles.processed_img = img;
     guidata(hObject, handles);  % 更新handles
 
 
     % 如果选择了目标提取
-    if isTargetExtractionChecked
-        [mask,img] = targetExtraction(img);
+    if isTargetExtractionChecked && isKMean
+        [mask,img] = targetExtraction_KMeans(img);
         handles.target_img = img;  % 将结果存储到handles结构体中
         guidata(hObject, handles);  % 更新handles数据
     end
 
+    if isTargetExtractionChecked && isWaterRegion
+        img = targetExtract_WatershedRegion(img);
+        handles.target_img = img;  % 将结果存储到handles结构体中
+        guidata(hObject, handles);  % 更新handles数据
+    end
+
+
+    if isTargetExtractionChecked && isBimodalThresholding
+        img = targetExtract_BimodalThresholding(img);
+        handles.target_img = img;  % 将结果存储到handles结构体中
+        guidata(hObject, handles);  % 更新handles数据
+    end
+    
     
     % 显示结果
     axes(handles.axes2); % 指定显示在 axes2
@@ -451,7 +509,6 @@ function checkbox2_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 end
 
-% Hint: get(hObject,'Value') returns toggle state of checkbox2
 
 
 % --- Executes on button press in checkbox3.
@@ -917,7 +974,6 @@ function pushbutton12_Callback(hObject, eventdata, handles)
         target_img = handles.target_img;
 
         lbp_source = computeLBP(source_img);
-        
         lbp_target = computeLBP(target_img);
         
          % 创建一个新的figure，并设置窗口名称
@@ -943,7 +999,132 @@ end
 
 % --- Executes on button press in pushbutton13.
 function pushbutton13_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton13 (see GCBO)
+ % 检查是否存在 source_img 和 target_img
+    if isfield(handles, 'source_img') && isfield(handles, 'target_img')
+        
+        source_img = handles.source_img;
+        target_img = handles.target_img;
+        step =8;
+        K =9;
+        % 对源图像进行 HOG 特征提取
+        [feature_source, image_hog_source] = computeHOG(source_img,step,K);
+        [feature_target, image_hog_target] = computeHOG(target_img,step,K);
+
+
+
+        % HOG 特征提取显示
+        figure('Name', 'HOG特征提取', 'NumberTitle', 'off'); 
+        subplot(1, 2, 1);
+        imshow(image_hog_source,[]);
+        title('源图像 HOG 特征提取');
+
+        subplot(1, 2, 2);
+        imshow(image_hog_target,[]);
+        title('目标图像 HOG 特征提取');
+
+
+
+    else
+        % 如果没有找到源图像或目标图像，则弹出提示
+        msgbox('源图像或目标图像未找到！', '错误', 'error');
+    end
+end
+
+
+% --- Executes on button press in radiobutton21.
+function radiobutton21_Callback(hObject, eventdata, handles)
+% hObject    handle to radiobutton21 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of radiobutton21
+end
+
+
+% --- Executes on button press in radiobutton22.
+function radiobutton22_Callback(hObject, eventdata, handles)
+% hObject    handle to radiobutton22 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of radiobutton22
+end
+
+
+% --- Executes on button press in checkbox14.
+function checkbox14_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox14 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox14
+end
+
+
+% --- Executes on button press in pushbutton14.
+function pushbutton14_Callback(hObject, eventdata, handles)
+[filename, path] = uigetfile({'*.jpg;*.png'}, '请选择目标图像');
+    if filename ~= 0
+        % 加载目标图像
+        fullpath = fullfile(path, filename);
+        targetImage = imread(fullpath);
+        
+        % 保存目标图像到 handles 中
+        handles.targetImage = targetImage;
+        guidata(hObject, handles);
+        
+        % 显示目标图像在 axes9
+        axes(handles.axes6);
+        imshow(targetImage);
+        % title('目标图像');
+        
+        axes(handles.axes7);
+        hist = computeHistogram(rgb2gray(targetImage));
+        bar(0:255, hist); % 绘制直方图
+        xlim([0 255]);
+        % title('灰度直方图');
+        xlabel('灰度值');
+        ylabel('像素数');
+
+        
+        % 保存目标图像到 handles 中
+        handles.zhifangtutargetImage = targetImage;
+        guidata(hObject, handles);
+
+
+
+    else
+        msgbox('未选择目标图像！', '错误', 'error');
+    end
+end
+
+
+% --- Executes on button press in pushbutton15.
+function pushbutton15_Callback(hObject, eventdata, handles)
+ % 确保已加载源图像和目标图像
+    if isfield(handles, 'zhifangtugrayImage') && isfield(handles, 'zhifangtutargetImage')
+        sourceImage = handles.zhifangtugrayImage;  % 源图像
+        targetImage = handles.zhifangtutargetImage;  % 目标图像
+
+        % 进行直方图匹配
+        matchedImage = histogramMatching(sourceImage, targetImage);
+        
+        % 在 axes10 中显示匹配后的图像
+        axes(handles.axes8);
+        imshow(matchedImage);
+        % title('匹配后的图像');
+
+        axes(handles.axes9);
+        hist = computeHistogram(matchedImage);
+        bar(0:255, hist); % 绘制直方图
+        xlim([0 255]);
+        % title('灰度直方图');
+        xlabel('灰度值');
+        ylabel('像素数');
+
+
+
+    else
+        msgbox('请先选择源图像和目标图像！', '错误', 'error');
+    end
 end

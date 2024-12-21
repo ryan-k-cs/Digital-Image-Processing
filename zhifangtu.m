@@ -56,7 +56,7 @@ function zhifangtu_OpeningFcn(hObject, eventdata, handles, varargin)
         imshow(img);
 
         % 转为灰度图
-        grayImage = rgb2gray(img);
+        grayImage = rgb_to_gray(img);
         axes(handles.axes2);
         imshow(grayImage);
 

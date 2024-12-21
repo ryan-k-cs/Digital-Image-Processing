@@ -88,7 +88,7 @@
 
 
 
-function [birdMask, extracted_img] = targetExtraction(I)
+function [birdMask, extracted_img] = targetExtraction_KMeans(I)
     % targetExtraction 对鸟类图片进行目标提取
     %
     % 输入：

@@ -7,7 +7,7 @@ function lbp = computeLBP(image)
 
     % 如果是彩色图像，先转换为灰度图像
     if size(image, 3) == 3
-        image = rgb2gray(image);
+        image = rgb_to_gray(image);
     end
 
     % 获取图像的尺寸
