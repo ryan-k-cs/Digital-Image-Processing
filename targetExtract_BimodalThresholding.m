@@ -7,6 +7,7 @@ function [result] =targetExtract_BimodalThresholding(I)
     %   result - 处理后的二值化图像（前景为1，背景为0）
     
     % 检查输入图像是否为彩色图像，如果是，转换为灰度图像
+    img = I;
     if size(I, 3) == 3
         I = rgb_to_gray(I);
     end
@@ -17,19 +18,35 @@ function [result] =targetExtract_BimodalThresholding(I)
     % 执行阈值化操作
     % result = I > thresh;
     binary_mask = I > thresh;
+   % 
+   % % 如果输入图像是彩色图像，则扩展二值掩码到三通道
+   %  if size(I, 3) == 3
+   %      % 创建一个与原图像大小相同的矩阵，保持原图的目标区域，背景设置为零
+   %      extracted_img = I;  % 复制原图
+   %      extracted_img(repmat(~binary_mask, [1, 1, 3])) = 0;  % 背景部分设为黑色
+   %  else
+   %      % 对于灰度图像，直接使用二值掩码进行处理
+   %      extracted_img = I;
+   %      extracted_img(~binary_mask) = 0;  % 背景部分设为零
+   %  end
+   % 
+   %  result = extracted_img;
 
    % 如果输入图像是彩色图像，则扩展二值掩码到三通道
-    if size(I, 3) == 3
-        % 创建一个与原图像大小相同的矩阵，保持原图的目标区域，背景设置为零
-        extracted_img = I;  % 复制原图
-        extracted_img(repmat(~binary_mask, [1, 1, 3])) = 0;  % 背景部分设为黑色
-    else
-        % 对于灰度图像，直接使用二值掩码进行处理
-        extracted_img = I;
-        extracted_img(~binary_mask) = 0;  % 背景部分设为零
-    end
-    
-    result = extracted_img;
+   if size(img, 3) == 3
+       % 确保图像为 double 类型进行计算，然后点乘
+       extracted_img = double(img) .* double(repmat(binary_mask, [1, 1, 3]));
+   else
+       % 对于灰度图像，直接使用二值掩码进行处理
+       extracted_img = double(img) .* double(binary_mask);
+   end
+
+   % 将处理结果转换回 uint8 类型
+   extracted_img = uint8(extracted_img);
+
+   % 输出提取后的图像
+   result = extracted_img;
+
 
 end
 

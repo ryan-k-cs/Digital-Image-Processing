@@ -1,4 +1,4 @@
-function output_img = piecewiseLinearTransformWithGrayscale(input_img)
+function output_img = piecewiseLinearTransform(input_img)
     % 输入：
     %   input_img: 输入图像（灰度或彩色）
     % 输出：
@@ -6,15 +6,13 @@ function output_img = piecewiseLinearTransformWithGrayscale(input_img)
 
     % 检查是否为彩色图像，如果是则转换为灰度图
     if size(input_img, 3) == 3
-        input_img = 0.2989 * input_img(:, :, 1) + ...
-                    0.5870 * input_img(:, :, 2) + ...
-                    0.1140 * input_img(:, :, 3);  % RGB到灰度的加权公式
+        input_img = rgb_to_gray(input_img);
     end
 
-    % 将输入图像转换为双精度数组（便于计算）
+    % 将输入图像转换为双精度数组
     input_img = double(input_img);
 
-    % 动态生成控制点：5个点（可根据需求调整数量）
+    % 动态生成控制点：5个点
     num_points = 5;  % 控制点数量
     x_points = linspace(0, 255, num_points);  % 灰度值等间隔分布
     y_points = [0, 50, 180, 220, 255];        % 自定义输出灰度值映射关系

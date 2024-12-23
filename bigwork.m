@@ -22,7 +22,7 @@ function varargout = bigwork(varargin)
 
 % Edit the above text to modify the response to help bigwork
 
-% Last Modified by GUIDE v2.5 21-Dec-2024 20:28:54
+% Last Modified by GUIDE v2.5 24-Dec-2024 01:12:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -111,7 +111,7 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 
         % 转为灰度图
         grayImage = rgb_to_gray(img);
-        axes(handles.axes2);
+        axes(handles.axes11);
         imshow(grayImage);
 
 
@@ -268,8 +268,8 @@ function pushbutton2_Callback(hObject, eventdata, handles)
             img = expTransform(img);
         elseif isPiecewiseLinear
             % 调用分段线性灰度变换函数
-            img = piecewiseLinearTransform(img);
-
+            % img = piecewiseLinearTransform(img);
+            img = threeSegmentLinearTransform(img);
 
         else
             % 如果没有选择有效的增强方式
@@ -287,10 +287,13 @@ function pushbutton2_Callback(hObject, eventdata, handles)
         % 如果选择了加噪声
         if isGaussianNoise
             % 添加高斯噪声
-            img = imnoise(img, 'gaussian');
+            m = str2double(get(handles.edit13,'String'));
+            v = str2double(get(handles.edit14,'String'));
+            img = addGaussianNoise(img, m,v);
         elseif isSaltAndPepperNoise
             % 添加椒盐噪声
-            img = imnoise(img, 'salt & pepper');
+            d = str2double(get(handles.edit15,'String'));
+            img = addSaltAndPepperNoise(img, d);
         else
             % 如果没有选择噪声类型，弹出警告
             errordlg('请先选择噪声类型！', '错误');
@@ -1127,4 +1130,76 @@ function pushbutton15_Callback(hObject, eventdata, handles)
     else
         msgbox('请先选择源图像和目标图像！', '错误', 'error');
     end
+end
+
+
+
+function edit13_Callback(hObject, eventdata, handles)
+% hObject    handle to edit13 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit13 as text
+%        str2double(get(hObject,'String')) returns contents of edit13 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit13_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit13 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+
+function edit14_Callback(hObject, eventdata, handles)
+% hObject    handle to edit14 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit14 as text
+%        str2double(get(hObject,'String')) returns contents of edit14 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit14_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit14 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+
+function edit15_Callback(hObject, eventdata, handles)
+% hObject    handle to edit15 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit15 as text
+%        str2double(get(hObject,'String')) returns contents of edit15 as a double
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit15_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit15 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 end

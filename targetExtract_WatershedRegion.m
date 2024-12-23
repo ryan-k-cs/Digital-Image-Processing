@@ -3,7 +3,8 @@ function output_image = targetExtract_WatershedRegion(input_image)
     % input_image: 输入的彩色图像
     % output_image: 输出的只包含目标区域，其他部分为黑色的图像
     
-    % Step 1: 图像预处理
+    % 图像预处理
+    I = input_image;
     image = im2double(rgb_to_gray(input_image)); % 将彩色图像转换为灰度图像
     hv = fspecial('prewitt');  % 水平方向的Prewitt滤波器
     hh = hv.';  % 垂直方向的Prewitt滤波器
@@ -13,13 +14,12 @@ function output_image = targetExtract_WatershedRegion(input_image)
     gh = abs(imfilter(image, hh, 'replicate'));
     g = sqrt(gv.^2 + gh.^2);  % 总梯度
     
-    % 对梯度图像进行中值滤波
     g = medfilt2(g, [5, 5]);
-    
-    % Step 2: 分水岭变换
+
+    % 分水岭变换
     L = watershed(g);  % 进行分水岭变换
     
-    % Step 3: 提取目标区域
+    % 提取目标区域
     num = max(L(:));  % 获取最大标签数，即区域数量
     
     % 计算每个区域的平均灰度值
@@ -66,11 +66,20 @@ function output_image = targetExtract_WatershedRegion(input_image)
         end
     end
     
-    % Step 4: 提取目标区域
+    % 提取目标区域
     target_area = (L > 1);  % 目标区域的标签大于1，排除分水岭边界
+
+
+    if size(I, 3) == 3
+        % 使用点乘操作，将目标区域提取出来，背景部分设为黑色
+        output_image = double(I) .* double(repmat(target_area, [1, 1, 3]));
+    else
+        % 对于灰度图像，直接使用二值掩码进行点乘
+        output_image = double(I) .* double(target_area);
+    end
     
-    % Step 5: 创建输出图像，将目标区域以外的部分设为黑色
-    output_image = zeros(size(image));  % 初始化全黑的输出图像
-    output_image(target_area) = image(target_area);  % 只保留目标区域
+    % 将输出图像转换为 uint8 类型
+    output_image = uint8(output_image);  % 转换回 uint8 类型
+
     
 end
