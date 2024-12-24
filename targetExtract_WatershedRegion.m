@@ -5,7 +5,12 @@ function output_image = targetExtract_WatershedRegion(input_image)
     
     % 图像预处理
     I = input_image;
-    image = im2double(rgb_to_gray(input_image)); % 将彩色图像转换为灰度图像
+    if size(input_image, 3) == 3
+        input_image = rgb_to_gray(input_image);
+    end
+
+
+    image = im2double(input_image); 
     hv = fspecial('prewitt');  % 水平方向的Prewitt滤波器
     hh = hv.';  % 垂直方向的Prewitt滤波器
     

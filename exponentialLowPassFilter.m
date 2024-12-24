@@ -2,6 +2,12 @@ function output_img = exponentialLowPassFilter(input_img, D0)
     % input_img: 输入的彩色图像
     % D0: 截止频率，控制低通滤波器的频率范围
     
+ % 判断输入图像是否为灰度图或彩色图像
+    if size(input_img, 3) == 1
+        % 如果是灰度图像，直接处理
+        output_img = applyExponentialLowPassFilter(input_img, D0);
+    else
+
     % 分离RGB通道
     R = input_img(:,:,1);  % 红色通道
     G = input_img(:,:,2);  % 绿色通道
@@ -13,6 +19,7 @@ function output_img = exponentialLowPassFilter(input_img, D0)
     B_filtered = applyExponentialLowPassFilter(B, D0);
         % 合并处理后的通道
     output_img = cat(3, R_filtered, G_filtered, B_filtered);
+    end
 end
 
 function output_channel = applyExponentialLowPassFilter(channel, D0)

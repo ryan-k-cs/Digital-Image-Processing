@@ -268,8 +268,8 @@ function pushbutton2_Callback(hObject, eventdata, handles)
             img = expTransform(img);
         elseif isPiecewiseLinear
             % 调用分段线性灰度变换函数
-            % img = piecewiseLinearTransform(img);
-            img = threeSegmentLinearTransform(img);
+            img = piecewiseLinearTransform(img);
+            % img = threeSegmentLinearTransform(img);
 
         else
             % 如果没有选择有效的增强方式
@@ -902,13 +902,24 @@ function pushbutton9_Callback(hObject, eventdata, handles)
         res= model.predict_with_checkpoint(model_path,image_save_path);
         res = string(res);  % 将 Python 字符串转换为 MATLAB 字符串
         set(handles.text23,"String",res);
-        
+
+        % 获取 text25 的内容
+        expected_result = get(handles.text25, "String");
+        % 判断分类结果是否正确
+        if strcmp(res, expected_result)
+            set(handles.text38, "String", "识别正确");
+            set(handles.text38, "ForegroundColor", [0 0 0]);  % 设置为黑色字体
+        else
+            set(handles.text38, "String", "识别错误");
+            set(handles.text38, "ForegroundColor", [1 0 0]);  % 设置为红色字体
+        end
+
     else
         msgbox('请先选择并处理图像！', '错误', 'error');
     end
 
 end
-
+    
 
 
 function edit12_Callback(hObject, eventdata, handles)
@@ -1007,7 +1018,7 @@ function pushbutton13_Callback(hObject, eventdata, handles)
         
         source_img = handles.source_img;
         target_img = handles.target_img;
-        step =8;
+        step =16;
         K =9;
         % 对源图像进行 HOG 特征提取
         [feature_source, image_hog_source] = computeHOG(source_img,step,K);
