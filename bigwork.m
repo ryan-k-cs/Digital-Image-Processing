@@ -897,11 +897,15 @@ function pushbutton9_Callback(hObject, eventdata, handles)
         
         % model_path = 'checkpoints/checkpoint_epoch_19.pt';
         % model_path = 'D:\_laboratory\pythonProject\DIP\checkpoints\checkpoint_epoch_19.pt';
-        model_path = 'D:\_laboratory\pythonProject\DIP\checkpoints\checkpoint_epoch_19.pt';
+        % model_path = 'D:\_laboratory\pythonProject\DIP\checkpoints\checkpoint_epoch_19.pt';
+        model_path = 'D:\_laboratory\matlab_table\Digital-Image-Processing\checkpoints\checkpoint_epoch_19.pt';
         model=py.importlib.import_module('model_pred');
+        tic; % 开始计时
         res= model.predict_with_checkpoint(model_path,image_save_path);
+        elapsedTime = toc; % 结束计时并获取耗时
         res = string(res);  % 将 Python 字符串转换为 MATLAB 字符串
         set(handles.text23,"String",res);
+        set(handles.text43, 'String', [num2str(elapsedTime, '%.5f'), ' 秒']);
 
         % 获取 text25 的内容
         expected_result = get(handles.text25, "String");
